@@ -1,0 +1,37 @@
+<<<<<<< Updated upstream
+Hauptanforderungen an das Plugin
+
+Muss
+* Adresse suchen
+o Unterteilt in Straße, Hausnr. Und Ort
+* Direktes Zoomen zu dem jeweiligen Adresspunkt
+* Vorschlagliste mit möglichen Suchergebnissen
+* Festlegung auf das Koordinatensystem ETRS89/Zone 32N
+* Suche soll Kreisweit erfolgen
+Soll
+* Fehlerresistent gegenüber Umlauten
+* Button zum Import des neuen Datensatzes
+* Automatische Anpassung der Ausgangsdaten an das gewünschte Suchformat (Reihenfolge etc.)
+Kann
+* Rechtschreibfehler berücksichtigen
+* Berücksichtigung verschiedener Koordinatensysteme (WGS etc.)
+* Bereitstellung für verschiedene Anwender
+=======
+Hauptanforderungen an das Plugin
+
+Muss
+* Adresse suchen
+o Unterteilt in Straße, Hausnr. Und Ort
+* Direktes Zoomen zu dem jeweiligen Adresspunkt
+* Vorschlagliste mit möglichen Suchergebnissen
+* Festlegung auf das Koordinatensystem ETRS89/Zone 32N
+* Suche soll Kreisweit erfolgen
+Soll
+* Fehlerresistent gegenüber Umlauten
+* Button zum Import des neuen Datensatzes
+* Automatische Anpassung der Ausgangsdaten an das gewünschte Suchformat (Reihenfolge etc.)
+Kann
+* Rechtschreibfehler berücksichtigen
+* Berücksichtigung verschiedener Koordinatensysteme (WGS etc.)
+* Bereitstellung für verschiedene Anwender
+>>>>>>> Stashed changes
