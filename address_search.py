@@ -21,11 +21,19 @@
  *                                                                         *
  ***************************************************************************/
 """
-from qgis.PyQt.QtCore import QSettings, QTranslator, QCoreApplication, Qt
-from qgis.PyQt.QtGui import QIcon
-from qgis.PyQt.QtWidgets import QAction
+from qgis.PyQt.QtCore import * #QSettings, QTranslator, QCoreApplication, Qt, QAbstractTableModel
+from qgis.PyQt.QtGui import * #QIcon
+from qgis.PyQt.QtSql import *
+from qgis.PyQt.QtWidgets import *
+#(QAction, QApplication, QDockWidget,QHeaderView,QMenu,QMessageBox,QTableWidgetItem,QTableView,QToolButton)
+
 # Initialize Qt resources from file resources.py
 from .resources import *
+#from PyQt5.QtWidgets import QAction, QMessageBox
+import sys
+
+import pandas as pd
+import sqlite3
 
 # Import the code for the DockWidget
 from .address_search_dockwidget import Address_searchDockWidget
@@ -43,7 +51,7 @@ class Address_search:
             application at run time.
         :type iface: QgsInterface
         """
-        # Save reference to the QGIS interface
+                # Save reference to the QGIS interface
         self.iface = iface
 
         # initialize plugin directory
@@ -139,7 +147,6 @@ class Address_search:
             added to self.actions list.
         :rtype: QAction
         """
-
         icon = QIcon(icon_path)
         action = QAction(icon, text, parent)
         action.triggered.connect(callback)
@@ -174,6 +181,13 @@ class Address_search:
             callback=self.run,
             parent=self.iface.mainWindow())
 
+        if self.dockwidget is None:
+            self.dockwidget=Address_searchDockWidget()
+
+        self.dockwidget.btn_Test.clicked.connect(self.txtToCsv)
+
+        #print('Test!')
+
     #--------------------------------------------------------------------------
 
     def onClosePlugin(self):
@@ -206,10 +220,124 @@ class Address_search:
         # remove the toolbar
         del self.toolbar
 
+    def loadWFS(self):
+
+        #self.dockwidget=Address_searchDockWidget()
+        self.dockwidget.label_Test.setText('Test!!!')
+        QMessageBox.information(None, 'Addresssuche', 'Dies ist ein Test!')
+        base_url = 'C:/Users/thoma/AppData/Roaming/QGIS/QGIS3/profiles/default/python/plugins/Georeferenzierte_Hausnummer_01_10_2022.txt'
+        self.iface.addVectorLayer(base_url, "Hauskoordinaten", "Hauskoords KrHf")
+
     #--------------------------------------------------------------------------
 
+    def txtToCsv(self):
+
+        data = pd.read_csv ('C:/Users/thoma/AppData/Roaming/QGIS/QGIS3/profiles/default/python/plugins/GeoHnr_Kopie.csv',delimiter=';', header=0)
+        print(data)
+        print('Columns: ' + data.columns)
+        data.pop('NBA')
+        data1 = data[['HNR','ADZ','RW','NW','STN','PLZ','ONM','ZON','POT']]
+        print('Without:')
+        print(data1)
+
+        con = sqlite3.connect("C:/Users/thoma/AppData/Roaming/QGIS/QGIS3/profiles/default/python/plugins/Adressen.db")
+        cur = con.cursor()
+        cur.execute("CREATE TABLE IF NOT EXISTS adressen(HNR, ADZ, RW, NW, STN, PLZ, ONM, ZON, POT)")
+        
+        data1.to_sql('adressen', con, if_exists='replace', index=True)
+
+    
+        cur.execute("SELECT * FROM adressen")
+        print(cur.fetchall())
+
+        cur.execute("SELECT STN FROM adressen")
+        strassen = []
+
+        for row in cur:
+            for field in row:
+                strassen.append(field)
+        print(strassen)
+
+        #self.dockwidget.cmb_Liste.addItems(strassen)
+
+
+        geek_list = [["Sayian", "Super Saiyan"], ["Super Sayian 2", 
+                                               "Super Sayian B"]]
+  
+        # making it editable
+        #self.combo_box.setEditable(True)
+
+        # self.model = QSqlTableModel(self)
+        # self.model.setTable("Departments")
+        # self.model.select()
+
+        # self.tableview = QTableView()
+        # self.tableview.setModel(self.model)
+
+        # self.combo = QComboBox()
+        # self.combo.setModel(self.model)
+        # column = self.model.record().indexOf("department")
+        # self.combo.setModelColumn(column)
+
+        # #self.combo.currentIndexChanged.connect(self.onCurrentIndexChanged)
+
+        # lay = QtWidgets.QVBoxLayout(self)
+        # lay.addWidget(self.tableview)
+        # lay.addWidget(self.combo)
+
+
+        # d = (
+        #     (1, "department1"),
+        #     (2, "department2"),
+        #     (3, "department3"),
+        #     (4, "department4"),
+        #     (5, "department5"),
+        # )
+
+        # self.dockwidget = QStandardItemModel(self)
+
+        # for id_, value in d:
+        #     it = QStandardItem(value)
+        #     it.setData(id_, IdRole)
+        #     self.model.appendRow(it)
+
+        # self.dockwidget.cmb_Liste = QtWidgets.QComboBox()
+        # self.dockwidget.cmb_Liste.setModel(self.model)
+
+        # lay = QtWidgets.QVBoxLayout(self)
+        # lay.addWidget(self.dockwidget.cmb_Liste)
+
+
+  
+        view = QTableView()
+  
+        # setting view to combo box
+        self.dockwidget.cmb_Liste.setView(view)
+
+        # Table Model
+        #self.model = TableModel(data)
+        #self.table.setModel(self.model)
+
+        # adding list of items to combo box
+        self.dockwidget.cmb_Liste.addItems(geek_list)
+
+
+
+        # with open('data.csv','r') as fin: # `with` statement available in 2.5+
+        #     # csv.DictReader uses first line in file for column headings by default
+        #      # comma is default delimiter
+        #     to_db = [(i['col1'], i['col2']) for i in data]
+
+        # cur.executemany("INSERT INTO t (col1, col2) VALUES (?, ?);", to_db)
+        # con.commit()
+        con.close()
+        
+        #QMessageBox.information(None, 'Addresssuche', 'Success!')
+        
     def run(self):
         """Run method that loads and starts the plugin"""
+        print ('Hello')
+        #self.label_Test.setText('Hello!')
 
         if not self.pluginIsActive:
             self.pluginIsActive = True
@@ -223,8 +351,10 @@ class Address_search:
                 # Create the dockwidget (after translation) and keep reference
                 self.dockwidget = Address_searchDockWidget()
 
+
             # connect to provide cleanup on closing of dockwidget
             self.dockwidget.closingPlugin.connect(self.onClosePlugin)
+            #QMessageBox.information(None, 'Minimal plugin', 'Do something useless here')
 
             # show the dockwidget
             # TODO: fix to allow choice of dock location
