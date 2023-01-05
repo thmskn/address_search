@@ -21,19 +21,34 @@
  *                                                                         *
  ***************************************************************************/
 """
-from qgis.PyQt.QtCore import * #QSettings, QTranslator, QCoreApplication, Qt, QAbstractTableModel
-from qgis.PyQt.QtGui import * #QIcon
-from qgis.PyQt.QtSql import *
-from qgis.PyQt.QtWidgets import *
+import os
+import sys
+import time
+import sqlite3
+import pandas as pd
+import numpy as np
+#import subprocess
+
+
+from PyQt5.QtWidgets import QApplication, QFileDialog, QLineEdit, QLabel, QProgressBar, QWidget, QPushButton, QCompleter, QAction, QDockWidget, QHeaderView, QMenu, QMessageBox, QToolButton, QTableWidget, QTableWidgetItem, QAbstractItemView, QTabWidget
+from PyQt5.QtCore import Qt, QSettings, QTranslator, QCoreApplication, QVariant, pyqtSignal, QFile, QUrl, QFileInfo
+from PyQt5.QtGui import QIcon, QFont, QDesktopServices
+from qgis.core import QgsCoordinateReferenceSystem, QgsCoordinateTransform, Qgis, QgsProject, QgsPointXY, QgsRectangle, QgsMessageLog, QgsVectorLayer, QgsField, QgsSvgMarkerSymbolLayer, QgsMarkerSymbol, QgsGeometry, QgsFeature
+
+#from qgis.PyQt.QtCore import * #QSettings, QTranslator, QCoreApplication, Qt, QAbstractTableModel
+#from qgis.PyQt.QtGui import  * #QIcon, QtGui
+#from PyQt5 import QtGui, QtCore
+#from qgis.PyQt.QtSql import *
+#from qgis.PyQt.QtWidgets import QCompleter, QAction
+#from qgis.core import * #QgsCoordinateReferenceSystem, QgsCoordinateTransform, Qgis, QgsProject, QgsPointXY, QgsRectangle, QgsMessageLog
 #(QAction, QApplication, QDockWidget,QHeaderView,QMenu,QMessageBox,QTableWidgetItem,QTableView,QToolButton)
+
+#import PySide2.QtGui
 
 # Initialize Qt resources from file resources.py
 from .resources import *
 #from PyQt5.QtWidgets import QAction, QMessageBox
-import sys
 
-import pandas as pd
-import sqlite3
 
 # Import the code for the DockWidget
 from .address_search_dockwidget import Address_searchDockWidget
@@ -54,9 +69,11 @@ class Address_search:
                 # Save reference to the QGIS interface
         self.iface = iface
 
+        dataFile = ""
+
         # initialize plugin directory
         self.plugin_dir = os.path.dirname(__file__)
-
+        self.datadir = self.plugin_dir + "/data"
         # initialize locale
         locale = QSettings().value('locale/userLocale')[0:2]
         locale_path = os.path.join(
@@ -80,6 +97,15 @@ class Address_search:
 
         self.pluginIsActive = False
         self.dockwidget = None
+        self.layerid = ''
+        self.layer = None
+
+        # self.dock = QDockWidget()
+        # btn_search = QWidget.QPushButton(name)
+        # btn_search.
+        # self.dockwidget.adrWidget = QTableWidget()
+        # self.dockwidget = QDockWidget()
+
 
 
     # noinspection PyMethodMayBeStatic
@@ -183,10 +209,25 @@ class Address_search:
 
         if self.dockwidget is None:
             self.dockwidget=Address_searchDockWidget()
+        
+        # self.dockwidget.btn_Test = QPushButton()
+        # self.dockwidget.btn_zoom = QPushButton()
+        # self.dockwidget.btn_search = QPushButton()
+        # self.dockwidget.txt_search = QLineEdit()
+        # self.dockwidget.adrWidget = QTableWidget()
+        # self.dockwidget.progBar = QProgressBar()
+        # self.dockwidget.closingPlugin = pyqtSignal()
 
-        self.dockwidget.btn_Test.clicked.connect(self.txtToCsv)
+        #self.dockwidget.setGeometry(0,0,300,600)
 
-        #print('Test!')
+        #self.dockwidget.btn_Test.clicked.connect(self.txtToCsv)
+        #self.dockwidget.cmb_Liste.currentTextChanged.connect(self.changed)
+        self.dockwidget.btn_zoom.clicked.connect(self.zoomTo)
+        #self.dockwidget.cmb_Liste.completer().setCompletionMode(QCompleter.PopupCompletion)
+        #self.dockwidget.cmb_Liste.currentTextChanged.connect(self.findText)
+        self.dockwidget.btn_search.clicked.connect(self.search)
+        self.dockwidget.txt_search.returnPressed.connect(self.search)
+        self.dockwidget.btn_selectData.clicked.connect(self.selectData)
 
     #--------------------------------------------------------------------------
 
@@ -206,6 +247,9 @@ class Address_search:
 
         self.pluginIsActive = False
 
+    def tim (self):
+        time.sleep(5)
+        self.dockwidget.progBar.setValue(0)
 
     def unload(self):
         """Removes the plugin menu item and icon from QGIS GUI."""
@@ -220,6 +264,178 @@ class Address_search:
         # remove the toolbar
         del self.toolbar
 
+    def link(self, linkStr):
+
+        QDesktopServices.openUrl(QUrl(linkStr))
+
+    #proof if db exists
+    def dbExists(self):
+
+        # Loop through data directory
+        for file in os.listdir(self.datadir):
+            if file == "Adressen.db":
+                #print(file[:-4])
+                print("Yeah!")
+                #print(self.datadir)
+                self.dockwidget.lbl_isLoaded.setText("Es sind bereits Daten vorhanden!")
+                #self.dockwidget.setupUi(self)
+                self.dockwidget.lbl_isLoaded.setFont(QFont("MS Shell Dlg 2", 9.5))
+                self.dockwidget.tabWidget.setTabEnabled(1, True)
+                # self.dlg.layerSelection.addItem(file[:-4])
+                break
+            else:
+                #print("Nicht Yeah!")
+                #self.dockwidget.tabWidget = QTabWidget()
+                self.dockwidget.tabWidget.setTabEnabled(1, False)
+                
+                #self.dockwidget.lbl_isLoaded = QLabel()
+                self.dockwidget.lbl_isLoaded.setText("Bitte laden Sie zunächst\r\neinen Datensatz ein!")
+                self.dockwidget.lbl_isLoaded.setAlignment(QtCore.Qt.AlignCenter)
+                self.dockwidget.lbl_isLoaded.setFont(QFont("MS Shell Dlg 2", 9.5))
+                #self.dockwidget.lbl_isLoaded.setStyleSheet("background-color: rgb(255, 255, 204); border: 1px solid black;")
+
+            print(file)
+            print("Adressen.db")
+        #print(datadir)
+        self.dockwidget.lbl_Info.linkActivated.connect(self.link)
+        self.dockwidget.lbl_Info.setText('<p>Die auszuwählenden Daten müssen im<br>Hauskoordinaten Datenformat vorliegen.<br />Weitere Informationen dazu finden Sie <a href="https://www.adv-online.de/AdV-Produkte/Standards-und-Produktblaetter/ZSHH/"><span style=" font-size:9.5pt; text-decoration: underline; color:#0000ff;">hier</span></a>. </p>')
+        #self.dockwidget.lbl_Info = QLabel()
+        #lbl_Info.setFont
+        self.dockwidget.lbl_Info.setFont(QFont("MS Shell Dlg 2", 9.5))
+
+    def selectData(self):
+
+        #subprocess.Popen('explorer "C:\Users\thoma\AppData\Roaming\QGIS\QGIS3\profiles\default\python\plugins\address_search"')
+        #os.system('explorer.exe "C:\\Users\\thoma\AppData\\Roaming\\QGIS\\QGIS3\\profiles\\default\\python\\plugins\\address_search"')
+
+        fname = QFileDialog.getOpenFileName(self.dockwidget, "Datei auswählen", "", "Textdateien (*.csv *.txt)")
+        print(fname[0])
+        #filename = QUrl.fromLocalFile(fname[0])
+        filename = QFileInfo(fname[0]).baseName()
+
+        print(filename)
+
+        filename = self.datadir + "/" + filename + ".csv"
+        QtCore.QFile.copy(fname[0], filename)
+        #print(dataFile)
+
+        #TODO implement message box with yes and no buttons to avoid overwriting files
+
+        # if dataFile == False:
+        #     QMessageBox.warning(None, 'Minimal plugin', 'Do something useless here')
+
+        #os.open("C:\\Users\\thoma\AppData\\Roaming\\QGIS\\QGIS3\\profiles\\default\\python\\plugins\\address_search", os.O_RDONLY)
+        try:
+            src = open(filename, 'r')
+            #sys.stdout = f
+            #data = pd.read_csv (dataFile ,delimiter=';', header=0, encoding='utf-8')#iso-8859-1
+            print(src.readline())
+        except UnicodeDecodeError:
+            src = open(filename, 'r', encoding='iso-8859-1')
+            print(src.readline())
+        
+        test = "NBA;OI;QUA;LAN;RBZ;KRS;GMD;OTT;SSS;HNR;ADZ;RW;NW;STN;PLZ;ONM;ZON;POT;\n"
+        
+        if src.readline().startswith("N;DE",0,3) == True:
+            print("True, erste Zeile wurde ersetzt!")
+            line = src.readlines()
+            line.insert(0,test)
+            #print("NBA;OI;QUA;LAN;RBZ;KRS;GMD;OTT;SSS;HNR;ADZ;RW;NW;STN;PLZ;ONM;ZON;POT;")
+            src.close()
+            src = open(filename, 'w')
+            src.writelines(line)
+            src.close()
+        
+        global dataFile
+        dataFile = filename
+        self.txtToCsv(filename)
+        self.dbExists()
+
+
+    def findText(self):
+
+        index = self.dockwidget.cmb_Liste.findText(self.dockwidget.cmb_Liste.currentText(), QtCore.Qt.MatchContains)
+        if index >= 0:
+            self.dockwidget.cmb_Liste.setCurrentIndex(index)
+
+        print("Call!")
+
+    def zoomCenter(x, y):
+
+        crsDest = QgsCoordinateReferenceSystem(QgsProject.instance().crs()).authid()
+        print(crsDest.authid())
+        crsSrc = QgsCoordinateReferenceSystem(4647)
+        print(crsSrc)
+
+        if crsDest.authid() == "EPSG:25832":
+            print("True")
+        else:
+            print("NO")
+
+        #return crs
+
+    def search(self):
+
+        searchString = '%' + self.dockwidget.txt_search.text() + '%'
+
+        self.dockwidget.adrWidget.setRowCount(0)
+
+        con = sqlite3.connect(self.datadir + "/Adressen.db")
+        cur = con.cursor()
+         
+        cur.execute("SELECT ID, ADR FROM adressen WHERE ADR like  '%s'" % (searchString))
+        records = cur.fetchall()
+
+        n = len(records)
+        print(n)
+        #self.dockwidget.progBar = QProgressBar()
+        # self.dockwidget.progBar.setMinimum(0)
+        self.dockwidget.progBar.setMaximum(n)
+                
+        for row in records:
+            i = records.index(row)
+            id = row[0]
+            adr = str(row[1])
+            
+
+            #print(id)
+
+            item_id = QTableWidgetItem(id)
+            item_id.setData(Qt.EditRole, id)
+            item_adr = QTableWidgetItem(adr)
+            self.dockwidget.adrWidget.insertRow(i)
+            self.dockwidget.adrWidget.setItem(i, 0, item_id)
+            self.dockwidget.adrWidget.setItem(i, 1, item_adr)
+            self.dockwidget.progBar.setValue(i+1)
+
+        self.dockwidget.adrWidget.resizeColumnsToContents()
+
+        cur.close()
+        con.close()
+
+        #print('Columns: ' + data.columns)
+        #cur.execute("SELECT * FROM adressen")
+        #print(cur.description)
+        #print(cur.fetchall())
+        
+        # adressen = []
+        
+        # for index, row in data.iterrows():
+        #     adressen.insert(data.index[index], row['ADR'])
+        #     #print(data.index[index], row['ADR'])
+
+        # self.dockwidget.cmb_Liste.insertItems(0,adressen)
+
+
+        print(searchString)
+
+    def columnName(self, position,name):
+
+        self.dockwidget.adrWidget.insertColumn(position)
+        colName = QTableWidgetItem(name)
+        self.dockwidget.adrWidget.setHorizontalHeaderItem(position,colName)
+
+
     def loadWFS(self):
 
         #self.dockwidget=Address_searchDockWidget()
@@ -229,40 +445,149 @@ class Address_search:
         self.iface.addVectorLayer(base_url, "Hauskoordinaten", "Hauskoords KrHf")
 
     #--------------------------------------------------------------------------
+    def zoomTo(self):
 
-    def txtToCsv(self):
-
-        data = pd.read_csv ('C:/Users/thoma/AppData/Roaming/QGIS/QGIS3/profiles/default/python/plugins/GeoHnr_Kopie.csv',delimiter=';', header=0)
-        print(data)
-        print('Columns: ' + data.columns)
-        data.pop('NBA')
-        data1 = data[['HNR','ADZ','RW','NW','STN','PLZ','ONM','ZON','POT']]
-        print('Without:')
-        print(data1)
-
-        con = sqlite3.connect("C:/Users/thoma/AppData/Roaming/QGIS/QGIS3/profiles/default/python/plugins/Adressen.db")
-        cur = con.cursor()
-        cur.execute("CREATE TABLE IF NOT EXISTS adressen(HNR, ADZ, RW, NW, STN, PLZ, ONM, ZON, POT)")
+        self.dockwidget.progBar.setValue(0)
         
-        data1.to_sql('adressen', con, if_exists='replace', index=True)
+        rowId = self.dockwidget.adrWidget.currentRow()
+        id = int(self.dockwidget.adrWidget.item(rowId, 0).text())
+        adr = self.dockwidget.adrWidget.item(rowId, 1).text()
+        #ne = QTableWidgetItem(id).data
+        # print(type(id))
+        # print(id)
 
-    
-        cur.execute("SELECT * FROM adressen")
-        print(cur.fetchall())
+        con = sqlite3.connect(self.datadir + "/Adressen.db")
+        cur = con.cursor()
+        #cur.execute("SELECT %s FROM adressen WHERE ID = %s" % ("*", id))
+        #print(cur.fetchall())
+        cur.execute("SELECT %s FROM adressen WHERE ID = %s" % ("RW", id))
+        x = cur.fetchone()[0]
 
-        cur.execute("SELECT STN FROM adressen")
-        strassen = []
+        cur.execute("SELECT %s FROM adressen WHERE ID = %s" % ("NW", id))
+        #cord_y = [int(record[0]) for record in cur.fetchall()]
+        y = cur.fetchone()[0]
+        #print(type(cord_x), type(cord_y))
+        #cord_x = int(cord_x)
+        #cord_y = int(cord_y)
+        #print(cord_x) 
+        #print(cord_y)
+        #print(self.dockwidget.cmb_Liste.currentIndex())
 
-        for row in cur:
-            for field in row:
-                strassen.append(field)
-        print(strassen)
+        centerPoint = QgsPointXY(x, y)
+        # convert coordinates
+        crsSrc = QgsCoordinateReferenceSystem(4647)  #crs of source data
+        crsPrj = QgsCoordinateReferenceSystem(QgsProject.instance().crs())
+        cordTrans = QgsCoordinateTransform(crsSrc, crsPrj, QgsProject.instance())
+        # forward transformation: src -> dest
+        centerPoint = cordTrans.transform(centerPoint)
+        self.iface.mapCanvas().setCenter(centerPoint)
+        scale_value = 2500 #scale
+        self.iface.mapCanvas().zoomScale(scale_value)
+        self.iface.mapCanvas().refresh()
+
+        if self.dockwidget.cb_tmpLayer.isChecked() == True:
+            self.save_point(centerPoint, adr)
+
+        #canvas = self.iface.mapCanvas()
+        #canvas.zoomWithCenter(x, y, True)
+
+    # def changed(self):
+
+    #     print(self.dockwidget.cmb_Liste.currentIndex())
+
+    def txtToCsv(self, dataFile):
+
+        # crsDest = QgsCoordinateReferenceSystem(QgsProject.instance().crs()).authid()
+        # print(crsDest)
+        # crsSrc = QgsCoordinateReferenceSystem(4647)
+        # print(crsSrc)
+
+        # if crsDest == "EPSG:25832":
+        #     print("True")
+        # else:
+        #     print("NO")
+
+        try:
+            data = pd.read_csv (dataFile ,delimiter=';', header=0, encoding='utf-8')#iso-8859-1
+        except UnicodeDecodeError:
+            data = pd.read_csv (dataFile ,delimiter=';', header=0, encoding='iso-8859-1')#iso-8859-1
+
+        #keep only this columns
+        data = data[['HNR','ADZ','RW','NW','STN','PLZ','ONM','ZON','POT']]
+
+        #fill all NaN values with '' to avoid errors
+        data.fillna('', inplace=True)
+
+        #replace commas with point (german and american number delimter)
+        data = data.replace({'RW' : {',' : '.'}, 'NW' : {',' : '.'}}, regex=True)
+        #data.replace(',','.', regex=True, inplace=True)
+
+        #address column with all relevant data
+        data['ADR'] = data['STN'].map(str) + ' ' + data['HNR'].map(str)  + data['ADZ'].map(str) +', ' + data['ONM'].map(str)
+
+        #new column to sort the streetnames
+        data['sortSTN'] = data['STN']
+        #data['sortSTN'] = data['sortSTN'].str.replace(['Ä','Ö','Ü'],['Ae','Oe', 'Ue'])
+
+        print(data.dtypes)
+        #needed to sort the streetnames in correct order, otherwise the umlaute were listed at the end
+        data = data.replace({'sortSTN' : {'Ä' : 'Ae', 'Ö' : 'Oe', 'Ü' : 'Ue','ä' : 'ae', 'ö' : 'oe', 'ü' : 'ue', 'ß' : 'ss'}}, regex=True)
+        data = data.sort_values(by=['sortSTN', 'HNR', 'ADZ'])
+
+        #reset index to get new order as index
+        data = data.reset_index(drop=True)
+        data['ID'] = np.arange(len(data))
+
+        #drop sort column
+        data.pop('sortSTN')
+        print(data)
+        #data1['ADR'] = data1.apply(lambda x:) & data1['HNR'] #& data1['ADZ'] & ", " & data1['ONM']
+
+        #data.loc[:, "RW"] = data["RW"].map('{:,.0f}'.format)
+
+        #give numeric data the correct format
+        data['RW'] = pd.to_numeric(data['RW'])
+        data['NW'] = pd.to_numeric(data['NW'])
+
+        #data.astype('RW': 'float64').dtypes
+        # c = data.select_dtypes(object).columns
+        # data[c] = data[c].apply(pd.to_numeric,errors='coerce')
+        #print(data.dtypes)
+
+        con = sqlite3.connect(self.datadir + "/Adressen.db")
+        cur = con.cursor()
+        cur.execute("DROP TABLE IF EXISTS adressen")
+        cur.execute("CREATE TABLE IF NOT EXISTS adressen(HNR, ADZ, RW, NW, STN, PLZ, ONM, ZON, POT, ADR, ID)")
+        
+        data.to_sql('adressen', con, if_exists='replace', index=True)
+         
+        #cur.execute("SELECT typeof(RW) FROM adressen LIMIT 1")
+        #print(cur.fetchall())
+
+        #print('Columns: ' + data.columns)
+        # cur.execute("SELECT * FROM adressen")
+        # #print(cur.description)
+        # #print(cur.fetchall())
+        
+        # adressen = []
+        
+        # for index, row in data.iterrows():
+        #     adressen.insert(data.index[index], row['ADR'])
+        #     #print(data.index[index], row['ADR'])
+
+        # self.dockwidget.cmb_Liste.insertItems(0,adressen)
+        # for row in cur:
+        #     for field in row:
+        #         strassen.append(field)
+        # print(strassen)
 
         #self.dockwidget.cmb_Liste.addItems(strassen)
+        #self.dockwidget.cmb_Liste.insertItem(6,"Hallo")
 
-
-        geek_list = [["Sayian", "Super Saiyan"], ["Super Sayian 2", 
-                                               "Super Sayian B"]]
+        #geek_list = ["Sayian", "Super Saiyan", "Super Sayian 2", "Super Sayian B"]
+        #geek_list = str(geek_list)
+        #geek_list = "Syian"
+        #i = 0
   
         # making it editable
         #self.combo_box.setEditable(True)
@@ -309,18 +634,18 @@ class Address_search:
 
 
   
-        view = QTableView()
+        #view = QTableView()
   
         # setting view to combo box
-        self.dockwidget.cmb_Liste.setView(view)
+        #self.dockwidget.cmb_Liste.setView(view)
 
         # Table Model
         #self.model = TableModel(data)
         #self.table.setModel(self.model)
 
         # adding list of items to combo box
-        self.dockwidget.cmb_Liste.addItems(geek_list)
 
+        #self.dockwidget.cmb_Liste.insertItems(i,geek_list)
 
 
         # with open('data.csv','r') as fin: # `with` statement available in 2.5+
@@ -330,13 +655,111 @@ class Address_search:
 
         # cur.executemany("INSERT INTO t (col1, col2) VALUES (?, ?);", to_db)
         # con.commit()
+        cur.close()
         con.close()
         
         #QMessageBox.information(None, 'Addresssuche', 'Success!')
-        
+
+    def _get_registry(self):
+        """compat"""
+        try:
+            return QgsProject.QgsMapLayerRegistry.instance()
+        except:
+            return QgsProject.instance()
+
+    def _get_layer_crs(self):
+        """get CRS from destination layer or from canvas if the layer does not exist"""
+        try:
+            return self.layer.crs()
+        except:
+            return self._get_canvas_crs()
+
+
+    def _get_canvas_crs(self):
+        """compat"""
+        try:
+            return self.iface.mapCanvas().mapRenderer().destinationCrs()
+        except:
+            return self.iface.mapCanvas().mapSettings().destinationCrs()
+
+    # save point to file, point is in project's crs
+    def save_point(self, point, address):
+        #self.logMessage('Saving point ' + str(point[0])  + ' ' + str(point[1]))
+        # create and add the point layer if not exists or not set
+        if not self._get_registry().mapLayer(self.layerid) :
+            # create layer with same CRS as map canvas
+            crs = self._get_canvas_crs()
+            self.layer = QgsVectorLayer("Point?crs=" + crs.authid() + "&field=Adresse:text", address, "memory") #"memory" can not be changed!
+            self.provider = self.layer.dataProvider()
+
+            # add fields
+            self.provider.addAttributes([QgsField("Adresse", QVariant.String)])
+
+            symbol = QgsMarkerSymbol.createSimple({'name': 'circle', 'color': 'red'})
+            #symbol = QgsSvgMarkerSymbolLayer.path("E:/Program Files (x86)/QGIS/QGIS_3_28_1/apps/qgis/./svg/symbol/red-marker.svg")
+            # self.diff.loadNamedStyle(self.plugin_dir + '/Styles/Style_Linie.qml')
+            # self.diff.triggerRepaint()
+
+            self.layer.renderer().setSymbol(symbol)
+            # show the change
+            self.layer.triggerRepaint()
+
+            # BUG: need to explicitly call it, should be automatic!
+            #self.layer.updateFields()
+
+            # Labels on
+            # try:
+            #     label_settings = QgsPalLayerSettings()
+            #     label_settings.fieldName = "Adresse"
+            #     self.layer.setLabeling(QgsVectorLayerSimpleLabeling(label_settings))
+            #     self.layer.setLabelsEnabled(True)
+            # except:
+            #     self.layer.setCustomProperty("labeling", "pal")
+            #     self.layer.setCustomProperty("labeling/enabled", "true")
+            #     #self.layer.setCustomProperty("labeling/fontFamily", "Arial")
+            #     #self.layer.setCustomProperty("labeling/fontSize", "10")
+            #     self.layer.setCustomProperty("labeling/fieldName", "Adresse")
+            #     self.layer.setCustomProperty("labeling/placement", "2")
+
+            # add layer if not already
+            self._get_registry().addMapLayer(self.layer)
+
+            # store layer id
+            self.layerid = self.layer.id()
+
+
+        # add a feature
+        try:
+            fields=self.layer.pendingFields()
+        except:
+            fields=self.layer.fields()
+
+        fet = QgsFeature(fields)
+        try:
+            fet.setGeometry(QgsGeometry.fromPoint(point))
+        except:
+            fet.setGeometry(QgsGeometry.fromPointXY(QgsPointXY(point)))
+
+        fet['Adresse'] = address
+
+        self.layer.startEditing()
+        self.layer.addFeatures([ fet ])
+        self.layer.commitChanges()
+
+    # check config and project settings before geocoding,
+    # return an error string
+
+
     def run(self):
         """Run method that loads and starts the plugin"""
-        print ('Hello')
+        #print ('Hello')
+        self.dbExists()
+        
+        #columns in tableWidget
+        self.columnName(0,"ID")
+        self.columnName(1,"Adresse")
+        self.dockwidget.adrWidget.setColumnHidden(0, True)
+
         #self.label_Test.setText('Hello!')
 
         if not self.pluginIsActive:
