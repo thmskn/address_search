@@ -131,7 +131,7 @@
         <item>
          <widget class="QCheckBox" name="cb_newLayer">
           <property name="text">
-           <string>Adresse vorhandennem Layer hinzufügen
+           <string>Adresse vorhandenem Layer hinzufügen
 (alternativ wird ein einzelner Layer erzeugt)</string>
           </property>
          </widget>

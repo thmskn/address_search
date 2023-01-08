@@ -462,16 +462,17 @@ class Address_search:
     def save_point(self, point, address):
         #create, add the point layer
         layName = address
-
+        
+        #poof checkbox to create a new or combinded layer
         if self.dockwidget.cb_newLayer.isChecked() == False:
             self.createLayer(address)
 
-        if self.dockwidget.cb_newLayer.isChecked() == True:
+        elif self.dockwidget.cb_newLayer.isChecked() == True:
 
             if not QgsProject.instance().mapLayersByName("gesuchte Adresspunkte"):
                 layName = "gesuchte Adresspunkte"
                 self.createLayer(layName)
-            elif QgsProject.instance().mapLayersByName("gesuchte Adresspunkte") and self.layer == None:
+            elif QgsProject.instance().mapLayersByName("gesuchte Adresspunkte"):
                 layers = QgsProject.instance().mapLayersByName("gesuchte Adresspunkte")
                 self.layer = layers[0]
 
