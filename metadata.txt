@@ -5,12 +5,13 @@
 [general]
 name=Adresssuche
 qgisMinimumVersion=3.0
-description=Zum suchen einer Adresse
+description=Searching for an adresspoint in Germany based on offical data - ALKIS Adresssuche
 version=0.1
 author=Thomas Knäuper
 email=thomas.knaeuper@stud.hs-bochum.de
 
 about=Dieses Plugin dient der Suche einer Adresse auf den aktuellen ALKIS Daten.
+Kann aber auch für andere Daten verwendet werden.
 
 tracker=http://bugs
 repository=http://repo
