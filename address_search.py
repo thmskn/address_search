@@ -28,8 +28,8 @@ import numpy as np
 
 from PyQt5.QtWidgets import QApplication, QFileDialog, QLineEdit, QLabel, QProgressBar, QWidget, QPushButton, QAction, QCheckBox, QDockWidget, QHeaderView, QMenu, QMessageBox, QToolButton, QTableWidget, QTableWidgetItem, QAbstractItemView, QTabWidget
 from PyQt5.QtCore import Qt, QSettings, QTranslator, QCoreApplication, QVariant, pyqtSignal, QFile, QUrl, QFileInfo
-from PyQt5.QtGui import QIcon, QFont, QDesktopServices, QPalette
-from qgis.core import QgsCoordinateReferenceSystem, QgsCoordinateTransform, QgsProject, QgsPointXY, QgsVectorLayer, QgsField, QgsMarkerSymbol, QgsGeometry, QgsFeature, QgsPalLayerSettings, QgsVectorLayerSimpleLabeling
+from PyQt5.QtGui import QIcon, QFont, QDesktopServices, QPalette, QColor
+from qgis.core import QgsCoordinateReferenceSystem, QgsCoordinateTransform, QgsProject, QgsPointXY, QgsVectorLayer, QgsField, QgsMarkerSymbol, QgsGeometry, QgsFeature, QgsPalLayerSettings, QgsVectorLayerSimpleLabeling, QgsSvgMarkerSymbolLayer
 
 # Initialize Qt resources from file resources.py
 from .resources import *
@@ -70,7 +70,7 @@ class Address_search:
         # Declare instance attributes
         self.actions = []
         self.menu = self.tr(u'&Adresssuche')
-        # TODO: We are going to let the user set this up in a future iteration
+        #done TODO: We are going to let the user set this up in a future iteration
         self.toolbar = self.iface.addToolBar(u'Address_search')
         self.toolbar.setObjectName(u'Address_search')
 
@@ -181,10 +181,11 @@ class Address_search:
 
         if self.dockwidget is None:
             self.dockwidget=Address_searchDockWidget()
-        
+
         self.dockwidget.btn_zoom.clicked.connect(self.zoomTo)
         self.dockwidget.btn_search.clicked.connect(self.search)
         self.dockwidget.txt_search.returnPressed.connect(self.search)
+        self.dockwidget.txt_search.textChanged.connect(lambda: self.search('LIMIT 15'))
         self.dockwidget.btn_selectData.clicked.connect(self.selectData)
         self.dockwidget.cb_tmpLayer.stateChanged.connect(self.cb_Checked)
 
@@ -370,27 +371,70 @@ class Address_search:
         cur.close()
         con.close()
 
-    def search(self):
+    #done TODO search by utype (tippen und dabei suchen)
+    # TODO suche auf Kartenausschnitt begrenzen, mit bounding box arbeiten
+    def search(self, limit = ' '):
 
-        searchString = self.dockwidget.txt_search.text()
-        to_replace = {'Ä' : 'Ae', 'Ö' : 'Oe', 'Ü' : 'Ue','ä' : 'ae', 'ö' : 'oe', 'ü' : 'ue', 'ß' : 'ss'}
+        #input text from textfield
+        inpTxt = self.dockwidget.txt_search.text()
+        to_replace = {'Ä' : 'Ae', 'Ö' : 'Oe', 'Ü' : 'Ue', 'ä' : 'ae', 'ö' : 'oe', 'ü' : 'ue', 'ß' : 'ss'}
 
+        #replace umlaute
         for char in to_replace.keys():
-            searchString = searchString.replace(char, to_replace[char])
-        #print(searchString) 
+            inpTxt = inpTxt.replace(char, to_replace[char])
+        #print(searchString)
 
-        searchString = '%' + searchString + '%'
+        #split text at spaces in "substrings", result is a list
+        splitString = inpTxt.split()
+        #declare searchString
+        searchString = ""
+
+        i = 0
+        if len(splitString) != 0:
+            searchString = "WHERE "
+        while i < len(splitString):
+            searchString = searchString + "searchCol like '%" + splitString[i] + "%'"
+            i = i + 1
+            if not i == len(splitString):
+                searchString = searchString + " and "
+
+        cbExtent = self.dockwidget.cb_curExtent.isChecked()
+
+        if cbExtent == True:
+            crsSrc = QgsCoordinateReferenceSystem(QgsProject.instance().crs())  #crs of source data
+            crsPrj = QgsCoordinateReferenceSystem(4647)
+            cordTrans = QgsCoordinateTransform(crsSrc, crsPrj, QgsProject.instance())
+            e = self.iface.mapCanvas().extent()
+
+            minPoint = QgsPointXY(e.xMinimum(), e.yMinimum())
+            maxPoint = QgsPointXY(e.xMaximum(), e.yMaximum())
+
+            minPoint = cordTrans.transform(minPoint)
+            maxPoint = cordTrans.transform(maxPoint)
+
+            xMinimum = str(minPoint.x())
+            yMinimum = str(minPoint.y())
+            xMaximum = str(maxPoint.x())
+            yMaximum = str(maxPoint.y())
+
+            if searchString != "":
+                searchString = searchString + " and"
+            elif searchString == "":
+                searchString = searchString + " WHERE"
+
+            searchString = searchString + " RW >" + xMinimum + " and RW <" + xMaximum + " and NW >" + yMinimum + " and NW <" + yMaximum + " "
 
         self.dockwidget.adrWidget.setRowCount(0)
 
         con = sqlite3.connect(self.datadir + "/Adressen.db")
         cur = con.cursor()
-         
-        cur.execute("SELECT ID, ADR, searchCol FROM adressen WHERE searchCol like  '%s'" % (searchString))
+
+        cur.execute("SELECT ID, ADR, searchCol FROM adressen %s %s" % (searchString, limit))
+
         records = cur.fetchall()
 
         n = len(records)
-        if n == 0:
+        if n == 0 and lim == 1:
             QMessageBox.information(None, "Adressen suchen", "Unter dem eingegebenen Suchbegriff konnte kein übereinstimmender Datensatz gefunden werden!")
             #self.dockwidget.txt_search = QLineEdit()
             self.dockwidget.txt_search.setText("")
@@ -503,14 +547,15 @@ class Address_search:
 
         # add fields
         self.provider.addAttributes([QgsField("Adresse", QVariant.String)])
+        #create normal symbol
+        #symbol = QgsMarkerSymbol.createSimple({'name': 'square', 'color': 'red'})
 
-        symbol = QgsMarkerSymbol.createSimple({'name': 'circle', 'color': 'red'})
-        #TODO create custom symbol
-        #symbol = QgsSvgMarkerSymbolLayer.path("E:/Program Files (x86)/QGIS/QGIS_3_28_1/apps/qgis/./svg/symbol/red-marker.svg")
-        # self.diff.loadNamedStyle(self.plugin_dir + '/Styles/Style_Linie.qml')
-        # self.diff.triggerRepaint()
+        #done TODO create custom symbol
+        #create custom svg symbol
+        symbol = QgsSvgMarkerSymbolLayer(self.plugin_dir + "/location-pin.svg")
+        symbol.setSize(6)
+        self.layer.renderer().symbol().changeSymbolLayer(0, symbol)
 
-        self.layer.renderer().setSymbol(symbol)
         # show the change
         self.layer.triggerRepaint()
 
@@ -542,6 +587,6 @@ class Address_search:
             #QMessageBox.information(None, 'Minimal plugin', 'Do something useless here')
 
             # show the dockwidget
-            # TODO: fix to allow choice of dock location
+            #done TODO: fix to allow choice of dock location
             self.iface.addDockWidget(Qt.LeftDockWidgetArea, self.dockwidget)
             self.dockwidget.show()
