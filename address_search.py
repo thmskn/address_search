@@ -21,7 +21,6 @@
 #import librarys
 import os
 import sys
-import time
 import sqlite3
 import pandas as pd
 import numpy as np
@@ -29,7 +28,7 @@ import numpy as np
 from PyQt5.QtWidgets import QApplication, QFileDialog, QLineEdit, QLabel, QProgressBar, QWidget, QPushButton, QAction, QCheckBox, QDockWidget, QHeaderView, QMenu, QMessageBox, QToolButton, QTableWidget, QTableWidgetItem, QAbstractItemView, QTabWidget
 from PyQt5.QtCore import Qt, QSettings, QTranslator, QCoreApplication, QVariant, pyqtSignal, QFile, QUrl, QFileInfo
 from PyQt5.QtGui import QIcon, QFont, QDesktopServices, QPalette, QColor
-from qgis.core import QgsCoordinateReferenceSystem, QgsCoordinateTransform, QgsProject, QgsPointXY, QgsVectorLayer, QgsField, QgsMarkerSymbol, QgsGeometry, QgsFeature, QgsPalLayerSettings, QgsVectorLayerSimpleLabeling, QgsSvgMarkerSymbolLayer
+from qgis.core import QgsCoordinateReferenceSystem, QgsCoordinateTransform, QgsProject, QgsPointXY, QgsVectorLayer, QgsField, QgsMarkerSymbol, QgsGeometry, QgsFeature, QgsPalLayerSettings, QgsVectorLayerSimpleLabeling, QgsSvgMarkerSymbolLayer, QgsTextBufferSettings, QgsTextFormat, QgsPalLayerSettings
 
 # Initialize Qt resources from file resources.py
 from .resources import *
@@ -70,11 +69,8 @@ class Address_search:
         # Declare instance attributes
         self.actions = []
         self.menu = self.tr(u'&Adresssuche')
-        #done TODO: We are going to let the user set this up in a future iteration
         self.toolbar = self.iface.addToolBar(u'Address_search')
         self.toolbar.setObjectName(u'Address_search')
-
-        #print "** INITIALIZING Address_search"
 
         self.pluginIsActive = False
         self.dockwidget = None
@@ -96,7 +92,6 @@ class Address_search:
         # noinspection PyTypeChecker,PyArgumentList,PyCallByClass
         return QCoreApplication.translate('Address_search', message)
 
-
     def add_action(
         self,
         icon_path,
@@ -108,44 +103,7 @@ class Address_search:
         status_tip=None,
         whats_this=None,
         parent=None):
-        """Add a toolbar icon to the toolbar.
 
-        :param icon_path: Path to the icon for this action. Can be a resource
-            path (e.g. ':/plugins/foo/bar.png') or a normal file system path.
-        :type icon_path: str
-
-        :param text: Text that should be shown in menu items for this action.
-        :type text: str
-
-        :param callback: Function to be called when the action is triggered.
-        :type callback: function
-
-        :param enabled_flag: A flag indicating if the action should be enabled
-            by default. Defaults to True.
-        :type enabled_flag: bool
-
-        :param add_to_menu: Flag indicating whether the action should also
-            be added to the menu. Defaults to True.
-        :type add_to_menu: bool
-
-        :param add_to_toolbar: Flag indicating whether the action should also
-            be added to the toolbar. Defaults to True.
-        :type add_to_toolbar: bool
-
-        :param status_tip: Optional text to show in a popup when mouse pointer
-            hovers over the action.
-        :type status_tip: str
-
-        :param parent: Parent widget for the new action. Defaults None.
-        :type parent: QWidget
-
-        :param whats_this: Optional text to show in the status bar when the
-            mouse pointer hovers over the action.
-
-        :returns: The action that was created. Note that the action is also
-            added to self.actions list.
-        :rtype: QAction
-        """
         icon = QIcon(icon_path)
         action = QAction(icon, text, parent)
         action.triggered.connect(callback)
@@ -188,13 +146,12 @@ class Address_search:
         self.dockwidget.txt_search.textChanged.connect(lambda: self.search('LIMIT 15'))
         self.dockwidget.btn_selectData.clicked.connect(self.selectData)
         self.dockwidget.cb_tmpLayer.stateChanged.connect(self.cb_Checked)
+        self.dockwidget.adrWidget.doubleClicked.connect(self.zoomTo)
 
         #columns in tableWidget
         self.columnName(0,"ID")
         self.columnName(1,"Adresse")
         self.dockwidget.adrWidget.setColumnHidden(0, True)
-
-    #--------------------------------------------------------------------------
 
     def onClosePlugin(self):
         """Cleanup necessary items here when plugin dockwidget is closed"""
@@ -211,10 +168,6 @@ class Address_search:
         # self.dockwidget = None
 
         self.pluginIsActive = False
-
-    def tim (self):
-        time.sleep(5)
-        self.dockwidget.progBar.setValue(0)
 
     def unload(self):
         """Removes the plugin menu item and icon from QGIS GUI."""
@@ -268,11 +221,8 @@ class Address_search:
 
         return cbTmp
     
-    #done TODO bestätigung, dass Daten eingeladen sind
-    #done TODO Bestätigungstitel größer und unscheinbar
     def selectData(self):
 
-        #done TODO wenn auf abbrechen geklickt wird, kommt ein Fehler
         src_path = QFileDialog.getOpenFileName(self.dockwidget, "Datei auswählen", "", "Textdateien (*.csv *.txt)")
         
         if src_path == ('', ''):
@@ -284,24 +234,20 @@ class Address_search:
         filename = self.datadir + "/" + filename
         cpy_file = QtCore.QFile.copy(src_path[0], filename)
 
-        #done TODO implement message box with yes and no buttons to avoid overwriting files
+        # message box with yes and no buttons to avoid overwriting files
         if cpy_file == False:
             msg_frem = QMessageBox.question(None, 'Daten einladen', 'Eine gleichnamige Datei existiert bereits, möchten Sie diese durch die aktuelle ersetzen?', QMessageBox.Yes | QMessageBox.No)
             if msg_frem == QMessageBox.Yes:
                 os.remove(filename)
-                #print("File removed")
-                #time.sleep(5)
                 QtCore.QFile.copy(src_path[0], filename)
             elif msg_frem == QMessageBox.No:
                 QMessageBox.information(None, "Daten einladen", "Der Vorgang wurde abgebrochen!")
                 return            
 
-        #done TODO funktioniert noch nicht, fehler muss noch behoben werden
         col_header = "NBA;OI;QUA;LAN;RBZ;KRS;GMD;OTT;SSS;HNR;ADZ;RW;NW;STN;PLZ;ONM;ZON;POT;\n"
         try:
             src = open(filename, 'r')
             if src.readline().startswith("N;DE",0) == True:
-                #print("True, erste Zeile wurde ersetzt!")
                 line = src.readlines()
                 line.insert(0,col_header)
                 src.close()
@@ -318,7 +264,6 @@ class Address_search:
         QMessageBox.information(None, "Daten eingeladen", "Die Daten wurden erfolgreich eingeladen!")
 
     def csvToDatabase(self, filename):
-        #done TODO suche und suchspalte anpassen, sodass auch Umlaute in beiden Richtungen gesucht werden können
 
         try:
             data = pd.read_csv (filename ,delimiter=';', header=0, encoding='utf-8')
@@ -371,8 +316,6 @@ class Address_search:
         cur.close()
         con.close()
 
-    #done TODO search by utype (tippen und dabei suchen)
-    # TODO suche auf Kartenausschnitt begrenzen, mit bounding box arbeiten
     def search(self, limit = ' '):
 
         #input text from textfield
@@ -434,9 +377,8 @@ class Address_search:
         records = cur.fetchall()
 
         n = len(records)
-        if n == 0 and lim == 1:
+        if n == 0: #and lim == 1
             QMessageBox.information(None, "Adressen suchen", "Unter dem eingegebenen Suchbegriff konnte kein übereinstimmender Datensatz gefunden werden!")
-            #self.dockwidget.txt_search = QLineEdit()
             self.dockwidget.txt_search.setText("")
             return
         self.dockwidget.progBar.setMaximum(n)
@@ -465,8 +407,6 @@ class Address_search:
         self.dockwidget.adrWidget.insertColumn(position)
         colName = QTableWidgetItem(name)
         self.dockwidget.adrWidget.setHorizontalHeaderItem(position,colName)
-
-    #--------------------------------------------------------------------------
 
     def zoomTo(self):
 
@@ -499,9 +439,6 @@ class Address_search:
         if self.cb_Checked() == True:
             self.save_point(centerPoint, adr)
 
-    #done TODO Punkt wird altem Layer hinzugefügt
-    #done TODO auswahlfeld: wird neuem Layer hinzugefügt oder neuer layer wird generiert
-    #done TODO layername: "gesuchte Adresspunkte"
     # save point to file, point is in project's crs
     def save_point(self, point, address):
         #create, add the point layer
@@ -521,11 +458,25 @@ class Address_search:
                 self.layer = layers[0]
 
         #labeling layer
-        label_settings = QgsPalLayerSettings()
-        label_settings.fieldName = "Adresse"
-        self.layer.setLabeling(QgsVectorLayerSimpleLabeling(label_settings))
-        self.layer.setLabelsEnabled(True)
 
+        layer_settings  = QgsPalLayerSettings()
+        text_format = QgsTextFormat()
+
+        buffer_settings = QgsTextBufferSettings()
+        buffer_settings.setEnabled(True)
+        buffer_settings.setSize(0.8)
+        buffer_settings.setColor(QColor("white"))
+
+        text_format.setBuffer(buffer_settings)
+        layer_settings.setFormat(text_format)
+
+        layer_settings.enabled = True
+        layer_settings.fieldName = "Adresse"
+        layer_settings = QgsVectorLayerSimpleLabeling(layer_settings)
+
+        self.layer.setLabeling(layer_settings)
+        self.layer.setLabelsEnabled(True)
+        self.layer.triggerRepaint()
          
         #add a feature and information in the atribut table
         fields = self.layer.fields()
@@ -550,7 +501,6 @@ class Address_search:
         #create normal symbol
         #symbol = QgsMarkerSymbol.createSimple({'name': 'square', 'color': 'red'})
 
-        #done TODO create custom symbol
         #create custom svg symbol
         symbol = QgsSvgMarkerSymbolLayer(self.plugin_dir + "/location-pin.svg")
         symbol.setSize(6)
@@ -572,21 +522,13 @@ class Address_search:
         if not self.pluginIsActive:
             self.pluginIsActive = True
 
-            #print "** STARTING Address_search"
-
-            # dockwidget may not exist if:
-            #    first run of plugin
-            #    removed on close (see self.onClosePlugin method)
             if self.dockwidget == None:
                 # Create the dockwidget (after translation) and keep reference
                 self.dockwidget = Address_searchDockWidget()
 
-
             # connect to provide cleanup on closing of dockwidget
             self.dockwidget.closingPlugin.connect(self.onClosePlugin)
-            #QMessageBox.information(None, 'Minimal plugin', 'Do something useless here')
 
             # show the dockwidget
-            #done TODO: fix to allow choice of dock location
             self.iface.addDockWidget(Qt.LeftDockWidgetArea, self.dockwidget)
             self.dockwidget.show()
