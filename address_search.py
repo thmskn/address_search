@@ -18,9 +18,8 @@
  *                                                                         *
  ***************************************************************************/
 """
-#import librarys
+# import librarys
 import os
-import sys
 import sqlite3
 import pandas as pd
 import numpy as np
@@ -48,7 +47,7 @@ class Address_search:
             application at run time.
         :type iface: QgsInterface
         """
-                # Save reference to the QGIS interface
+        # Save reference to the QGIS interface
         self.iface = iface
 
         # initialize plugin directory
@@ -140,13 +139,16 @@ class Address_search:
         if self.dockwidget is None:
             self.dockwidget=Address_searchDockWidget()
 
+        # button click events
+        self.dockwidget.btn_selectData.clicked.connect(self.selectFile)
         self.dockwidget.btn_zoom.clicked.connect(self.zoomTo)
-        self.dockwidget.btn_search.clicked.connect(self.search)
-        self.dockwidget.txt_search.returnPressed.connect(self.search)
-        self.dockwidget.txt_search.textChanged.connect(lambda: self.search('LIMIT 15'))
-        self.dockwidget.btn_selectData.clicked.connect(self.selectData)
-        self.dockwidget.cb_tmpLayer.stateChanged.connect(self.cb_Checked)
         self.dockwidget.adrWidget.doubleClicked.connect(self.zoomTo)
+        self.dockwidget.btn_search.clicked.connect(lambda: self.searchAddress())
+
+        # other events
+        self.dockwidget.txt_search.textChanged.connect(lambda: self.searchAddress('LIMIT 15'))
+        self.dockwidget.txt_search.returnPressed.connect(lambda: self.searchAddress())
+        self.dockwidget.cb_tmpLayer.stateChanged.connect(self.cb_Checked)
 
         #columns in tableWidget
         self.columnName(0,"ID")
@@ -156,23 +158,13 @@ class Address_search:
     def onClosePlugin(self):
         """Cleanup necessary items here when plugin dockwidget is closed"""
 
-        #print "** CLOSING Address_search"
-
         # disconnects
         self.dockwidget.closingPlugin.disconnect(self.onClosePlugin)
-
-        # remove this statement if dockwidget is to remain
-        # for reuse if plugin is reopened
-        # Commented next statement since it causes QGIS crashe
-        # when closing the docked window:
-        # self.dockwidget = None
 
         self.pluginIsActive = False
 
     def unload(self):
         """Removes the plugin menu item and icon from QGIS GUI."""
-
-        #print "** UNLOAD Address_search"
 
         for action in self.actions:
             self.iface.removePluginMenu(
@@ -182,6 +174,7 @@ class Address_search:
         # remove the toolbar
         del self.toolbar
 
+    # link to webpage
     def link(self, linkStr):
 
         QDesktopServices.openUrl(QUrl(linkStr))
@@ -202,16 +195,19 @@ class Address_search:
                 self.dockwidget.lbl_isLoaded.setText("Bitte laden Sie zunächst\r\neinen Datensatz ein!")
                 self.dockwidget.lbl_isLoaded.setAlignment(QtCore.Qt.AlignCenter)
                 self.dockwidget.lbl_isLoaded.setFont(QFont("MS Shell Dlg 2", 9.5))
-
+            
+        # text to textlabel
         self.dockwidget.lbl_Info.linkActivated.connect(self.link)
         self.dockwidget.lbl_Info.setText('<p>Die auszuwählenden Daten müssen im<br>Hauskoordinaten Datenformat vorliegen.<br />Weitere Informationen dazu finden Sie <a href="https://www.adv-online.de/AdV-Produkte/Standards-und-Produktblaetter/ZSHH/"><span style=" font-size:9.5pt; text-decoration: underline; color:#0000ff;">hier</span></a>. </p>')
 
         self.dockwidget.lbl_Info.setFont(QFont("MS Shell Dlg 2", 9.5))
 
+    # check state of comboboxes
     def cb_Checked(self):
 
         cbTmp = self.dockwidget.cb_tmpLayer.isChecked()
 
+        # second cbbox can only checked, if the first is checked
         if  cbTmp == True:
             cb_nLayer = True
         elif cbTmp == False:
@@ -221,10 +217,11 @@ class Address_search:
 
         return cbTmp
     
-    def selectData(self):
+    # select file with address points
+    def selectFile(self):
 
         src_path = QFileDialog.getOpenFileName(self.dockwidget, "Datei auswählen", "", "Textdateien (*.csv *.txt)")
-        
+
         if src_path == ('', ''):
             return
 
@@ -244,7 +241,10 @@ class Address_search:
                 QMessageBox.information(None, "Daten einladen", "Der Vorgang wurde abgebrochen!")
                 return            
 
+        # first col of file
         col_header = "NBA;OI;QUA;LAN;RBZ;KRS;GMD;OTT;SSS;HNR;ADZ;RW;NW;STN;PLZ;ONM;ZON;POT;\n"
+
+        # exception handling, if the header does not exists
         try:
             src = open(filename, 'r')
             if src.readline().startswith("N;DE",0) == True:
@@ -265,6 +265,7 @@ class Address_search:
 
     def csvToDatabase(self, filename):
 
+        # exception handling for encoding
         try:
             data = pd.read_csv (filename ,delimiter=';', header=0, encoding='utf-8')
         except UnicodeDecodeError:
@@ -284,9 +285,7 @@ class Address_search:
 
         #new column to sort the streetnames
         data['sortSTN'] = data['STN']
-        #data['sortSTN'] = data['sortSTN'].str.replace(['Ä','Ö','Ü'],['Ae','Oe', 'Ue'])
-
-        #print(data.dtypes)
+  
         #needed to sort the streetnames in correct order, otherwise the umlaute were listed at the end
         data = data.replace({'sortSTN' : {'Ä' : 'Ae', 'Ö' : 'Oe', 'Ü' : 'Ue','ä' : 'ae', 'ö' : 'oe', 'ü' : 'ue', 'ß' : 'ss'}}, regex=True)
         data = data.sort_values(by=['sortSTN', 'HNR', 'ADZ'])
@@ -300,38 +299,42 @@ class Address_search:
 
         #drop sort column
         data.pop('sortSTN')
-        #print(data)
 
         #give numeric data the correct format
         data['RW'] = pd.to_numeric(data['RW'])
         data['NW'] = pd.to_numeric(data['NW'])
 
+        # execute the sql statement with sqlite
         con = sqlite3.connect(self.datadir + "/Adressen.db")
         cur = con.cursor()
         cur.execute("DROP TABLE IF EXISTS adressen")
         cur.execute("CREATE TABLE IF NOT EXISTS adressen(HNR, ADZ, RW, NW, STN, PLZ, ONM, ZON, POT, ADR, ID)")
         
+        # overwrite db file
         data.to_sql('adressen', con, if_exists='replace', index=True)
          
+        # cursor close
         cur.close()
+        # disconnect
         con.close()
 
-    def search(self, limit = ' '):
+    def searchAddress(self, limit = ' '):
 
-        #input text from textfield
+        # input text from textfield
         inpTxt = self.dockwidget.txt_search.text()
         to_replace = {'Ä' : 'Ae', 'Ö' : 'Oe', 'Ü' : 'Ue', 'ä' : 'ae', 'ö' : 'oe', 'ü' : 'ue', 'ß' : 'ss'}
 
-        #replace umlaute
+        # replace umlaute
         for char in to_replace.keys():
             inpTxt = inpTxt.replace(char, to_replace[char])
-        #print(searchString)
 
-        #split text at spaces in "substrings", result is a list
+        # split text at spaces in "substrings", result is a list
         splitString = inpTxt.split()
-        #declare searchString
+        # declare searchString
         searchString = ""
 
+        # compose sql statement
+        # any part separated by space will be part of the sql statetment
         i = 0
         if len(splitString) != 0:
             searchString = "WHERE "
@@ -341,6 +344,7 @@ class Address_search:
             if not i == len(splitString):
                 searchString = searchString + " and "
 
+        # checkbox "über aktuelle Ausdehnung suchen"
         cbExtent = self.dockwidget.cb_curExtent.isChecked()
 
         if cbExtent == True:
@@ -360,6 +364,7 @@ class Address_search:
             xMaximum = str(maxPoint.x())
             yMaximum = str(maxPoint.y())
 
+            # different possibilities of the string 
             if searchString != "":
                 searchString = searchString + " and"
             elif searchString == "":
@@ -367,22 +372,29 @@ class Address_search:
 
             searchString = searchString + " RW >" + xMinimum + " and RW <" + xMaximum + " and NW >" + yMinimum + " and NW <" + yMaximum + " "
 
+        # reset tablewidget
         self.dockwidget.adrWidget.setRowCount(0)
 
         con = sqlite3.connect(self.datadir + "/Adressen.db")
         cur = con.cursor()
 
+        # execute sql statement
         cur.execute("SELECT ID, ADR, searchCol FROM adressen %s %s" % (searchString, limit))
 
         records = cur.fetchall()
 
+        # record count
         n = len(records)
+
+        # no matches
         if n == 0: #and lim == 1
             QMessageBox.information(None, "Adressen suchen", "Unter dem eingegebenen Suchbegriff konnte kein übereinstimmender Datensatz gefunden werden!")
             self.dockwidget.txt_search.setText("")
             return
+        # progressbar set maximum
         self.dockwidget.progBar.setMaximum(n)
-                
+        
+        # add records to tablewidget
         for row in records:
             i = records.index(row)
             id = row[0]
@@ -404,14 +416,14 @@ class Address_search:
 
     def columnName(self, position,name):
 
+        # add columns in tablewidget
         self.dockwidget.adrWidget.insertColumn(position)
         colName = QTableWidgetItem(name)
         self.dockwidget.adrWidget.setHorizontalHeaderItem(position,colName)
 
     def zoomTo(self):
-
-        self.dockwidget.progBar.setValue(0)
-        
+       
+        # get selected row
         rowId = self.dockwidget.adrWidget.currentRow()
         id = int(self.dockwidget.adrWidget.item(rowId, 0).text())
         adr = self.dockwidget.adrWidget.item(rowId, 1).text()
@@ -425,14 +437,18 @@ class Address_search:
         y = cur.fetchone()[0]
 
         centerPoint = QgsPointXY(x, y)
+
         # convert coordinates
         crsSrc = QgsCoordinateReferenceSystem(4647)  #crs of source data
         crsPrj = QgsCoordinateReferenceSystem(QgsProject.instance().crs())
         cordTrans = QgsCoordinateTransform(crsSrc, crsPrj, QgsProject.instance())
+
         # forward transformation: src -> dest
         centerPoint = cordTrans.transform(centerPoint)
         self.iface.mapCanvas().setCenter(centerPoint)
-        scale_value = 2500 #scale
+        
+        # scale
+        scale_value = 2500
         self.iface.mapCanvas().zoomScale(scale_value)
         self.iface.mapCanvas().refresh()
 
@@ -444,10 +460,11 @@ class Address_search:
         #create, add the point layer
         layName = address
         
-        #poof checkbox to create a new or combinded layer
+        # proof checkbox to create a new or combinded layer
         if self.dockwidget.cb_newLayer.isChecked() == False:
             self.createLayer(address)
 
+        # combinded layer checked
         elif self.dockwidget.cb_newLayer.isChecked() == True:
 
             if not QgsProject.instance().mapLayersByName("gesuchte Adresspunkte"):
@@ -462,6 +479,7 @@ class Address_search:
         layer_settings  = QgsPalLayerSettings()
         text_format = QgsTextFormat()
 
+        # set halo
         buffer_settings = QgsTextBufferSettings()
         buffer_settings.setEnabled(True)
         buffer_settings.setSize(0.8)

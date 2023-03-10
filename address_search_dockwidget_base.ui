@@ -17,7 +17,7 @@
    </size>
   </property>
   <property name="windowTitle">
-   <string>ALKIS Adresssuche</string>
+   <string>Adresssuche</string>
   </property>
   <widget class="QWidget" name="dockWidgetContents">
    <widget class="QTabWidget" name="tabWidget">
@@ -112,13 +112,50 @@
       <string>Suche</string>
      </attribute>
      <layout class="QGridLayout" name="gridLayout">
-      <item row="1" column="0">
+      <item row="2" column="0">
        <layout class="QVBoxLayout" name="verticalLayout_2">
         <item>
-         <widget class="QCheckBox" name="cb_curExtent">
-          <property name="text">
-           <string>über aktuelle Ausdehnung suchen</string>
+         <widget class="QProgressBar" name="progBar">
+          <property name="value">
+           <number>0</number>
           </property>
+          <property name="orientation">
+           <enum>Qt::Horizontal</enum>
+          </property>
+          <property name="invertedAppearance">
+           <bool>false</bool>
+          </property>
+         </widget>
+        </item>
+        <item>
+         <widget class="QTableWidget" name="adrWidget">
+          <property name="editTriggers">
+           <set>QAbstractItemView::NoEditTriggers</set>
+          </property>
+          <property name="tabKeyNavigation">
+           <bool>true</bool>
+          </property>
+          <property name="showDropIndicator" stdset="0">
+           <bool>false</bool>
+          </property>
+          <property name="dragEnabled">
+           <bool>true</bool>
+          </property>
+          <property name="dragDropOverwriteMode">
+           <bool>true</bool>
+          </property>
+          <property name="alternatingRowColors">
+           <bool>true</bool>
+          </property>
+          <property name="selectionMode">
+           <enum>QAbstractItemView::SingleSelection</enum>
+          </property>
+          <property name="selectionBehavior">
+           <enum>QAbstractItemView::SelectRows</enum>
+          </property>
+          <attribute name="verticalHeaderVisible">
+           <bool>false</bool>
+          </attribute>
          </widget>
         </item>
         <item>
@@ -138,27 +175,21 @@
         <item>
          <widget class="QCheckBox" name="cb_newLayer">
           <property name="text">
-           <string>Adresse vorhandenem Layer hinzufügen
+           <string>Adresse in vorhandenem Layer hinzufügen
 (alternativ wird ein einzelner Layer erzeugt)</string>
-          </property>
-         </widget>
-        </item>
-        <item>
-         <widget class="QProgressBar" name="progBar">
-          <property name="value">
-           <number>0</number>
-          </property>
-          <property name="orientation">
-           <enum>Qt::Horizontal</enum>
-          </property>
-          <property name="invertedAppearance">
-           <bool>false</bool>
           </property>
          </widget>
         </item>
        </layout>
       </item>
-      <item row="0" column="0">
+      <item row="4" column="0">
+       <widget class="QPushButton" name="btn_zoom">
+        <property name="text">
+         <string>Zoom zur Adresse</string>
+        </property>
+       </widget>
+      </item>
+      <item row="1" column="0">
        <layout class="QHBoxLayout" name="horizontalLayout">
         <item>
          <widget class="QLineEdit" name="txt_search">
@@ -182,41 +213,10 @@
         </item>
        </layout>
       </item>
-      <item row="2" column="0">
-       <widget class="QTableWidget" name="adrWidget">
-        <property name="editTriggers">
-         <set>QAbstractItemView::NoEditTriggers</set>
-        </property>
-        <property name="tabKeyNavigation">
-         <bool>true</bool>
-        </property>
-        <property name="showDropIndicator" stdset="0">
-         <bool>false</bool>
-        </property>
-        <property name="dragEnabled">
-         <bool>true</bool>
-        </property>
-        <property name="dragDropOverwriteMode">
-         <bool>true</bool>
-        </property>
-        <property name="alternatingRowColors">
-         <bool>true</bool>
-        </property>
-        <property name="selectionMode">
-         <enum>QAbstractItemView::SingleSelection</enum>
-        </property>
-        <property name="selectionBehavior">
-         <enum>QAbstractItemView::SelectRows</enum>
-        </property>
-        <attribute name="verticalHeaderVisible">
-         <bool>false</bool>
-        </attribute>
-       </widget>
-      </item>
-      <item row="3" column="0">
-       <widget class="QPushButton" name="btn_zoom">
+      <item row="0" column="0">
+       <widget class="QCheckBox" name="cb_curExtent">
         <property name="text">
-         <string>Zoom zur Adresse</string>
+         <string>über die aktuelle Ausdehnung suchen</string>
         </property>
        </widget>
       </item>
