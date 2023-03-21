@@ -36,7 +36,7 @@ Das Plugin ist im offiziellen [QGIS-Plugin-Repository] enthalten und kann in QGI
 
 ### Reiter Daten
 
-<img src="./screenshots/reiter_daten.png" width="300">
+<img src="./screenshots/reiter_daten.png" width="250">
 
 Hier muss die Datengrundlage, auf der gesucht werden soll, hinzugefügt werden.  
 Ein Testdatensatz, der AdV steht bereits in [data] zur Verfügung.  
@@ -44,12 +44,12 @@ Derzeit müssen die Daten Offline zur Verfügung stehen.
 
 ### Reiter Suche
 
-<img src="./screenshots/reiter_suche.png" width="300">
+<img src="./screenshots/reiter_suche.png" width="250">
 
 Im Reiter "Suche" gibt es die Möglichkeit über die eingeladenen Adressdaten zu Suchen.  
 Die Suche kann über die unter [Features](#features) aufgeführten Begriffe gesucht werden.
 
-<img src="./screenshots/curExtent.png" width="30">
+<img src="./screenshots/curExtent.png" width="100">
 Vor der Suche kann die Option *über die aktuelle Ausdehnung suchen* festgelegt werden.  
 Um eine effizientere Suche zu ermöglichen, wird es empfohlen diese Option bei großen Datensätzen zu verwenden.
 
