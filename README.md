@@ -2,7 +2,7 @@
 
 ### _QGIS-Plugin zur Suche von Adressen_
 
-Fragen, Anmerkungen, Fehlermeldungen etc. bitte gerne per E-Mail an [thomas.knaeuper@stud.hs-bochum.de] mitteilen.
+Fragen, Anmerkungen, Fehlermeldungen, etc. bitte gerne per E-Mail an [thomas.knaeuper@stud.hs-bochum.de] mitteilen.
 
 <!-- <img src="./screenshots/flurstuecksfinder.gif"> -->
 
@@ -21,7 +21,7 @@ Fragen, Anmerkungen, Fehlermeldungen etc. bitte gerne per E-Mail an [thomas.knae
 
 
 ## Hinweise
-Die Adresssuche ist für die Suche im Hauskoordinatenformat vorgesehen.
+Die Adresssuche ist für die Suche im Hauskoordinatenformat vorgesehen.  
 Auf der Webseite der [AdV] wird dieses genauer erläutert.
 
 
@@ -89,5 +89,5 @@ Sobald ein gültiges Flurstück ausgewählt oder gesucht wurde, werden die Knöp
 
 
 [thomas.knaeuper@stud.hs-bochum.de]: <mailto:thomas.knaeuper@stud.hs-bochum.de?subject=Adresssuche%20Plugin>
-[Adv]:<https://www.adv-online.de/AdV-Produkte/Standards-und-Produktblaetter/ZSHH/>
+[Adv]:<a href="https://www.adv-online.de/AdV-Produkte/Standards-und-Produktblaetter/ZSHH/" target="_blank">Hello, world!</a>
 [QGIS-Plugin-Repository]: <https://github.com/thmskn/address_search>
