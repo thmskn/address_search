@@ -49,7 +49,7 @@ Derzeit müssen die Daten Offline zur Verfügung stehen.
 Im Reiter "Suche" gibt es die Möglichkeit über die eingeladenen Adressdaten zu Suchen.  
 Die Suche kann über die unter [Features](#features) aufgeführten Begriffe gesucht werden.
 
-<img src="./screenshots/curExtent.png" width="100">
+<img src="./screenshots/curExtent.png" width="200">
 Vor der Suche kann die Option *über die aktuelle Ausdehnung suchen* festgelegt werden.  
 Um eine effizientere Suche zu ermöglichen, wird es empfohlen diese Option bei großen Datensätzen zu verwenden.
 
