@@ -54,7 +54,7 @@ In der Tabelle werden alle Suchergebnisse aufgelistet.
 Durch das Auswählen eines Vorschlags kann, entweder über den Button *Zoom zur Adresse* oder einen Doppelklick, auf den gewünschten Punkt gezoomt werden.  
 Für jede Adresse wird ein Feature mit Attributen erzeugt
 
-#### zusätzliche Funktionen
+#### Zusätzliche Funktionen
 
 <img src="./screenshots/curExtent.png" width="200">
 Vor der Suche kann die Option *über die aktuelle Ausdehnung suchen* festgelegt werden.  
@@ -75,4 +75,4 @@ Weitere Information entnehmen sie bitte der Datenformatbeschreibung der [AdV].
 [thomas.knaeuper@stud.hs-bochum.de]: <mailto:thomas.knaeuper@stud.hs-bochum.de?subject=Adresssuche%20Plugin>
 [Adv]:<https://www.adv-online.de/AdV-Produkte/Standards-und-Produktblaetter/ZSHH/>
 [QGIS-Plugin-Repository]:<https://github.com/thmskn/address_search>
-[data]::<https://github.com/thmskn/address_search/tree/main/data>
+[data]:<https://github.com/thmskn/address_search/tree/main/data>
