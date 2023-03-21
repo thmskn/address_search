@@ -15,15 +15,10 @@ Fragen, Anmerkungen, Fehlermeldungen, etc. bitte gerne per E-Mail an [thomas.kna
   - [Reiter Suche](#reiter-suche)
 
 - [Daten](#daten)
-  - [Verwendete WFS-Dienste](#verwendete-wfs-dienste)
-  - [Katasterämter, Gemarkungen und Fluren](#katasterämter-gemarkungen-und-fluren)
-  - [Lizenz der Daten](#lizenz-der-daten)
-
 
 ## Hinweise
 Die Adresssuche ist für die Suche im Hauskoordinatenformat vorgesehen.  
 Auf der Webseite der [AdV] wird dieses genauer erläutert.
-
 
 ## Features
 - Suche von Adressen über:
@@ -37,28 +32,28 @@ Auf der Webseite der [AdV] wird dieses genauer erläutert.
 
 Das Plugin ist im offiziellen [QGIS-Plugin-Repository] enthalten und kann in QGIS über *Erweiterungen -> Erweiterungen verwalten und installieren* installiert und auch bei Verfügbarkeit einer neuen Version aktualisiert werden.
 
-
 ## Verwendung
 
-### Reiter Einstellungen
+### Reiter Daten
 
-<img src="./screenshots/reiter_einstellungen.png" width="300">
+<img src="./screenshots/reiter_daten.png" width="300">
 
-Hier kann der Katasteramtsbezirk (z.B. Stadt, Kreis, Städteregion) im Bereich "Einstellungen" ausgewählt werden.
+Hier muss die Datengrundlage, auf der gesucht werden soll, hinzugefügt werden.  
+Ein Testdatensatz, der AdV steht bereits in [data] zur Verfügung.  
+Derzeit müssen die Daten Offline zur Verfügung stehen.
 
-- **NRW:**<br>
-  Auswahl des Kastasteramtsbezirks über das Dropdown-Menü, Flurstückssuche auf Basis des NRW-WFS-Dienstes.<br><br>
-  Anmerkung: Das Werkzeug [Flurstück mit Klick auf die Karte finden](#flurstück-mit-klick-auf-die-karte-finden) funktioniert landesweit auch ohne explizite Auswahl eines Katasteramtsbezirks.
+### Reiter Suche
 
-- **Kreis Viersen, Kleve, Wesel und Stadt Krefeld:**<br>
-  Flurstückssuche auf Basis des enstprechenden KRZN-WFS-Dienstes (wochenaktuell).
+<img src="./screenshots/reiter_suche.png" width="300">
 
-Die Option "Flurstück highlighten" markiert das Flurstück. Die Markierung wird so lange angezeigt bis das Plugin geschlossen oder ein neues Flurstück gesucht wird. Wird die Option deaktiviert, so wird nur der Umring des Flurstücks kurz blinkend hervorgehoben.
+Im Reiter "Suche" gibt es die Möglichkeit über die eingeladenen Adressdaten zu Suchen.  
+Die Suche kann über die unter [Features](#features) aufgeführten Begriffe gesucht werden.
 
-### Reiter Flurstück suchen
+<img src="./screenshots/curExtent.png" width="30">
+Vor der Suche kann die Option *über die aktuelle Ausdehnung suchen* festgelegt werden.  
+Um eine effizientere Suche zu ermöglichen, wird es empfohlen diese Option bei großen Datensätzen zu verwenden.
 
-
-<img src="./screenshots/reiter_flurstueck_suchen.png" width="300">
+Sobald mit dem Eintippen des Suchbegriffs begonnen wird, beginnt die Suche.
 
 Im Reiter „Flurstück suchen“ gibt es mehrere Möglichkeiten, um nach einem Flurstück zu suchen:
 
@@ -81,13 +76,15 @@ Sobald ein gültiges Flurstück ausgewählt oder gesucht wurde, werden die Knöp
 | <img src="./icons/add.png" width="40">  | Durch einen Klick auf das Plus-Symbol kann das Polygon des Flurstücks dem Kartenbild hinzugefügt werden. |
 | <img src="./icons/remove.png" width="40">  |  Durch das Minus-Symbol wird das mit Klick auf das Plus-Symbol hinzugefügte Flurstück wieder entfernt. |
 
-
-
 ## Daten
+
+Die Daten müssen als *.txt* oder *.csv* zur Verfügung stehen. Außerdem muss die Codierung *utf-8* verwendet werden.  
+Weitere Information entnehmen sie bitte der Datenformatbeschreibung der [AdV].
 
 
 
 
 [thomas.knaeuper@stud.hs-bochum.de]: <mailto:thomas.knaeuper@stud.hs-bochum.de?subject=Adresssuche%20Plugin>
-[Adv]:<a href="https://www.adv-online.de/AdV-Produkte/Standards-und-Produktblaetter/ZSHH/" target="_blank">Hello, world!</a>
-[QGIS-Plugin-Repository]: <https://github.com/thmskn/address_search>
+[Adv]:<https://www.adv-online.de/AdV-Produkte/Standards-und-Produktblaetter/ZSHH/>
+[QGIS-Plugin-Repository]:<https://github.com/thmskn/address_search>
+[data]::<https://github.com/thmskn/address_search/tree/main/data>
