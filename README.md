@@ -38,7 +38,7 @@ Das Plugin ist im offiziellen [QGIS-Plugin-Repository] enthalten und kann in QGI
 
 <img src="./screenshots/reiter_daten.png" width="250">
 
-Hier muss die Datengrundlage, auf der gesucht werden soll, hinzugefügt werden.  
+Hier muss die Datengrundlage, auf der gesucht wird, hinzugefügt werden.  
 Ein Testdatensatz, der AdV steht bereits in [data] zur Verfügung.  
 Derzeit müssen die Daten Offline zur Verfügung stehen.
 
@@ -52,7 +52,8 @@ Die Suche kann über die unter [Features](#features) aufgeführten Begriffe gesu
 Sobald mit dem Eintippen des Suchbegriffs begonnen wird, beginnt die Suche.  
 In der Tabelle werden alle Suchergebnisse aufgelistet.  
 Durch das Auswählen eines Vorschlags kann, entweder über den Button *Zoom zur Adresse* oder einen Doppelklick, auf den gewünschten Punkt gezoomt werden.  
-Für jede Adresse wird ein Feature mit Attributen erzeugt
+Für jede Adresse wird ein Feature mit Attributen erzeugt.
+
 
 #### Zusätzliche Funktionen
 
