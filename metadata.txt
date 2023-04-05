@@ -12,8 +12,8 @@ email=thomas.knaeuper@stud.hs-bochum.de
 
 about=Dieses Plugin dient der Suche einer Adresse auf den aktuellen ALKIS Daten. Kann aber auch für andere Daten verwendet werden.
 
-tracker=http://bugs
-repository=http://repo
+tracker=https://github.com/thmskn/address_search/issues
+repository=https://github.com/thmskn/address_search
 # End of mandatory metadata
 
 # Recommended items:
@@ -25,7 +25,7 @@ hasProcessingProvider=no
 # Tags are comma separated with spaces allowed
 tags=python
 
-homepage=http://homepage
+homepage=https://github.com/thmskn/address_search
 category=Plugins
 icon=icon.png
 # experimental flag
