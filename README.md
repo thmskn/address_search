@@ -2,7 +2,7 @@
 
 ### _QGIS-Plugin zur Suche von Adressen_
 
-Fragen, Anmerkungen, Fehlermeldungen, etc. bitte gerne per E-Mail an [thomas.knaeuper@stud.hs-bochum.de] mitteilen.
+Fragen, Anmerkungen, Fehlermeldungen, etc. bitte gerne per E-Mail an [thmskn@outlook.de] mitteilen.
 
 <!-- <img src="./screenshots/flurstuecksfinder.gif"> -->
 
@@ -73,7 +73,7 @@ Beim Zoom auf den Punkt gibt es verschiedene Optionen einen Layer zu generieren:
 Die Daten müssen als *.txt* oder *.csv* zur Verfügung stehen. Außerdem muss die Codierung *utf-8* verwendet werden.  
 Weitere Information entnehmen sie bitte der Datenformatbeschreibung der [AdV].
 
-[thomas.knaeuper@stud.hs-bochum.de]: <mailto:thomas.knaeuper@stud.hs-bochum.de?subject=Adresssuche%20Plugin>
+[thmskn@outlook.de]: <mailto:thmskn@outlook.de?subject=Adresssuche%20Plugin>
 [Adv]:<https://www.adv-online.de/AdV-Produkte/Standards-und-Produktblaetter/ZSHH/>
 [QGIS-Plugin-Repository]:<https://github.com/thmskn/address_search>
 [data]:<https://github.com/thmskn/address_search/tree/main/data>
